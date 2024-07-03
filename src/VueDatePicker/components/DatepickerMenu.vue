@@ -101,37 +101,17 @@
                 <slot v-if="$slots['action-extra']" name="action-extra" :select-current-date="selectCurrentDate" />
             </div>
         </div>
-        <ActionRow
-            v-if="!autoApply || defaultedConfig.keepActionRow"
-            :menu-mount="menuMount"
-            v-bind="baseProps"
-            :calendar-width="calendarWidth"
-            @close-picker="$emit('close-picker')"
-            @select-date="$emit('select-date')"
-            @invalid-select="$emit('invalid-select')"
-            @select-now="selectCurrentDate"
-        >
-            <template v-for="(slot, i) in actionSlots" #[slot]="args" :key="i">
-                <slot :name="slot" v-bind="{ ...args }" />
-            </template>
-        </ActionRow>
     </div>
 </template>
 
 <script lang="ts" setup>
     import { computed, onMounted, onUnmounted, ref, useSlots } from 'vue';
 
-    import ActionRow from '@/components/ActionRow.vue';
-
     import { mapSlots, useArrowNavigation, useState, useFlow, useDefaults } from '@/composables';
     import { checkStopPropagation, unrefElement } from '@/utils/util';
     import { AllProps } from '@/props';
 
-    import MonthPicker from '@/components/MonthPicker/MonthPicker.vue';
-    import YearPicker from '@/components/YearPicker/YearPicker.vue';
-    import TimePickerSolo from '@/components/TimePicker/TimePickerSolo.vue';
     import DatePicker from '@/components/DatePicker/DatePicker.vue';
-    import QuarterPicker from '@/components/QuarterPicker/QuarterPicker.vue';
 
     import type { DynamicClass, MenuView, InternalModuleValue, MenuExposedFn, MonthModel } from '@/interfaces';
     import type { PropType } from 'vue';
@@ -237,10 +217,6 @@
     const { flowStep, updateFlowStep, childMount, resetFlow } = useFlow(props, emit, dynCmpRef);
 
     const displayComponent = computed(() => {
-        if (props.monthPicker) return MonthPicker;
-        if (props.yearPicker) return YearPicker;
-        if (props.timePicker) return TimePickerSolo;
-        if (props.quarterPicker) return QuarterPicker;
         return DatePicker;
     });
 
@@ -259,11 +235,8 @@
         }
     };
 
-    const actionSlots = mapSlots(slots, 'action');
-
     const sharedSlots = computed(() => {
         if (props.monthPicker || props.yearPicker) return mapSlots(slots, 'monthYear');
-        if (props.timePicker) return mapSlots(slots, 'timePicker');
         return mapSlots(slots, 'shared');
     });
 
@@ -323,17 +296,13 @@
         emit('time-picker-close');
     };
 
-    const closeOverlays = (instance: number) => {
+    const closeOverlays = () => {
         dynCmpRef.value?.toggleTimePicker(false, false);
-        dynCmpRef.value?.toggleMonthPicker(false, false, instance);
-        dynCmpRef.value?.toggleYearPicker(false, false, instance);
     };
 
-    const switchView = (view: MenuView, instance = 0) => {
-        if (view === 'month') return dynCmpRef.value?.toggleMonthPicker(false, true, instance);
-        if (view === 'year') return dynCmpRef.value?.toggleYearPicker(false, true, instance);
+    const switchView = (view: MenuView) => {
         if (view === 'time') return dynCmpRef.value?.toggleTimePicker(true, false);
-        return closeOverlays(instance);
+        return closeOverlays();
     };
 
     const callChildFn = (fn: MenuExposedFn, ...args: any[]) => {

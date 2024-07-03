@@ -48,34 +48,6 @@
             </template>
         </DpCalendar>
     </InstanceWrap>
-    <div v-if="enableTimePicker">
-        <template v-if="$slots['time-picker']">
-            <slot name="time-picker" v-bind="{ time, updateTime }" />
-        </template>
-        <TimePicker
-            v-else
-            ref="timePickerRef"
-            v-bind="$props"
-            :hours="time.hours"
-            :minutes="time.minutes"
-            :seconds="time.seconds"
-            :internal-model-value="internalModelValue"
-            :disabled-times-config="disabledTimesConfig"
-            :validate-time="validateTime"
-            @mount="componentMounted(CMP.timePicker)"
-            @update:hours="updateTime($event)"
-            @update:minutes="updateTime($event, false)"
-            @update:seconds="updateTime($event, false, true)"
-            @reset-flow="$emit('reset-flow')"
-            @overlay-closed="$emit('time-picker-close')"
-            @overlay-opened="$emit('time-picker-open', $event)"
-            @am-pm-change="$emit('am-pm-change', $event)"
-        >
-            <template v-for="(slot, i) in timePickerSlots" #[slot]="args" :key="i">
-                <slot :name="slot" v-bind="args" />
-            </template>
-        </TimePicker>
-    </div>
 </template>
 
 <script setup lang="ts">
@@ -84,7 +56,6 @@
     import DpHeader from '@/components/DatePicker/DpHeader.vue';
     import DpCalendar from '@/components/DatePicker/DpCalendar.vue';
     import InstanceWrap from '@/components/Common/InstanceWrap.vue';
-    import TimePicker from '@/components/TimePicker/TimePicker.vue';
 
     import { PickerBaseProps } from '@/props';
     import { mapSlots, useCalendarClass, useDefaults } from '@/composables';
@@ -127,8 +98,6 @@
         year,
         modelValue,
         time,
-        disabledTimesConfig,
-        validateTime,
         getCalendarDays,
         getMarker,
         handleArrow,
@@ -138,7 +107,6 @@
         updateMonthYear,
         presetDate,
         selectCurrentDate,
-        updateTime,
     } = useDatePicker(props, emit, triggerCalendarTransition, updateFlowStep);
     const slots = useSlots();
     const { setHoverDate, getDayClassData, clearHoverDate } = useCalendarClass(modelValue, props);
@@ -146,11 +114,9 @@
 
     const headerRefs = ref<InstanceType<typeof DpHeader>[]>([]);
     const calendarRefs = ref<InstanceType<typeof DpCalendar>[]>([]);
-    const timePickerRef = ref<InstanceType<typeof TimePicker> | null>(null);
 
     const calendarSlots = mapSlots(slots, 'calendar');
     const headerSlots = mapSlots(slots, 'monthYear');
-    const timePickerSlots = mapSlots(slots, 'timePicker');
 
     const componentMounted = (cmp: CMP) => {
         if (!props.shadow) {
@@ -214,17 +180,12 @@
         headerRefs.value[instance]?.toggleYearPicker(flow, show);
     };
 
-    const toggleTimePicker = (flow: boolean, show?: boolean, childOpen?: string) => {
-        timePickerRef.value?.toggleTimePicker(flow, show, childOpen);
-    };
-
     const getSidebarProps = () => {
         return {
             modelValue,
             month,
             year,
             time,
-            updateTime,
             updateMonthYear,
             selectDate,
             presetDate,
@@ -237,7 +198,6 @@
         selectCurrentDate,
         toggleMonthPicker,
         toggleYearPicker,
-        toggleTimePicker,
         handleArrow,
         updateMonthYear,
         getSidebarProps,

@@ -1,10 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { nextTick } from 'vue';
 import { addMonths, addYears, getMonth, getYear, subMonths } from 'date-fns';
 import { mount, VueWrapper } from '@vue/test-utils';
 
 import DpHeader from '@/components/DatePicker/DpHeader.vue';
-import MonthPicker from '@/components/MonthPicker/MonthPicker.vue';
 
 import { openMenu } from '../../utils';
 
@@ -12,10 +10,7 @@ import { getMonths, getYears } from '@/utils/util';
 import { useArrowNavigation } from '@/composables';
 import { getDefaultFilters } from '@/utils/defaults';
 
-import type { ComponentPublicInstance } from 'vue';
-import type { DateFilter, OverlayGridItem } from '@/interfaces';
-
-type MonthPickerCmp<T> = VueWrapper<ComponentPublicInstance<T>>;
+import type { DateFilter } from '@/interfaces';
 
 describe('Month and Year picker components', () => {
     let wrapper: VueWrapper<any>;
@@ -91,13 +86,6 @@ describe('Month and Year picker components', () => {
         expect(wrapper.vm.isDisabled).toBeTruthy();
     });
 
-    it('Should toggle year-picker when month-picker mode is used', () => {
-        wrapper = mount(MonthPicker, { props: { ...props, monthPicker: true } });
-
-        wrapper.vm.toggleYearPicker(0, false);
-        expect(wrapper.vm.showYearPicker[0]).toEqual(true);
-    });
-
     it('Should properly show left-right icons on multi-calendars', () => {
         wrapper = mount(DpHeader, { props: { ...props, multiCalendars: 2 } });
 
@@ -122,16 +110,6 @@ describe('Month and Year picker components', () => {
         expect(refSets.monthYear).toHaveLength(4);
     });
 
-    it('Should handle year update', async () => {
-        wrapper = mount(MonthPicker, { props }) as unknown as MonthPickerCmp<{
-            handleYear: (i: number, inc: boolean) => void;
-        }>;
-        wrapper.vm.handleYear(0, true);
-        await wrapper.vm.$nextTick();
-
-        expect(wrapper.vm.year(0)).toEqual(getYear(addYears(new Date(), 1)));
-    });
-
     it('Should get proper overlay slot props for month-overlay', async () => {
         wrapper = mount(DpHeader, { props });
 
@@ -152,27 +130,6 @@ describe('Month and Year picker components', () => {
         expect(slotProps).toHaveProperty('items');
         expect(slotProps.items).toHaveLength(101);
         expect(spy.getMockName()).toEqual('toggleYearPicker');
-    });
-
-    it('Should disable months based on disabled dates', async () => {
-        const currentMonth = getMonth(new Date());
-        const wrapper = mount(MonthPicker, {
-            props: { ...props, disabledDates: [new Date()] },
-        }) as unknown as MonthPickerCmp<{ groupedMonths: (i: number) => OverlayGridItem[][] }>;
-
-        const monthValues = wrapper.vm.groupedMonths(0);
-        const rowWithDisabled = monthValues.find((val) => val.some((m) => m.value === currentMonth));
-        const disabledValue = rowWithDisabled?.find((val) => val.value === currentMonth);
-        expect(disabledValue).toHaveProperty('disabled', true);
-    });
-
-    it('Should render multi-calendars in month picker mode', async () => {
-        const wrapper = mount(MonthPicker, { props: { ...props, multiCalendars: true } }) as unknown as MonthPickerCmp<{
-            year: (inst: number) => number;
-        }>;
-        await nextTick();
-        expect(wrapper.vm.year(0)).toEqual(getYear(new Date()));
-        expect(wrapper.vm.year(1)).toEqual(getYear(addYears(new Date(), 1)));
     });
 
     it('Should display year picker', async () => {

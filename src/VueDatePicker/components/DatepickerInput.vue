@@ -51,31 +51,18 @@
                 <span v-if="$slots['input-icon'] && !hideInputIcon" class="dp__input_icon" @click="emit('toggle')"
                     ><slot name="input-icon"
                 /></span>
-                <CalendarIcon
-                    v-if="!$slots['input-icon'] && !hideInputIcon && !$slots['dp-input']"
-                    class="dp__input_icon dp__input_icons"
-                    @click="emit('toggle')"
-                />
             </div>
             <span
                 v-if="$slots['clear-icon'] && inputValue && clearable && !disabled && !readonly"
                 class="dp__clear_icon"
                 ><slot name="clear-icon" :clear="onClear"
             /></span>
-            <CancelIcon
-                v-if="clearable && !$slots['clear-icon'] && inputValue && !disabled && !readonly"
-                class="dp__clear_icon dp__input_icons"
-                data-test="clear-icon"
-                @click.prevent="onClear($event)"
-            />
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
     import { computed, ref } from 'vue';
-
-    import { CalendarIcon, CancelIcon } from '@/components/Icons';
 
     import { assignDefaultTime, isValidDate, parseFreeInput } from '@/utils/date-utils';
     import { useDefaults, useValidation } from '@/composables';

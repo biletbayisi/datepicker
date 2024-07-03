@@ -48,10 +48,7 @@ export const setMonthOrYearRange = (
 
 export const checkRangeAutoApply = (range: Date[], emit: VueEmit, autoApply: boolean, modelAuto: boolean) => {
     if (!range) return;
-    if (range[0] && range[1] && autoApply) {
-        emit('auto-apply');
-    }
-    if (range[0] && !range[1] && modelAuto && autoApply) {
+    if ((range[0] && range[1] && autoApply) || (range[0] && !range[1] && modelAuto && autoApply)) {
         emit('auto-apply');
     }
 };

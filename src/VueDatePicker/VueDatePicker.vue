@@ -39,7 +39,7 @@
                         :collapse="collapse"
                         @close-picker="closeMenu"
                         @select-date="selectDate"
-                        @auto-apply="autoApplyValue"
+                        @auto-apply="true"
                         @time-update="timeUpdate"
                         @flow-step="$emit('flow-step', $event)"
                         @update-month-year="$emit('update-month-year', $event)"
@@ -165,8 +165,6 @@
         parseExternalModelValue(props.modelValue);
         nextTick().then(() => {
             if (!defaultedInline.value.enabled) {
-                const el = getScrollableParent(pickerWrapperRef.value);
-                el?.addEventListener('scroll', onScroll);
 
                 window?.addEventListener('resize', onResize);
             }
@@ -182,8 +180,6 @@
 
     onUnmounted(() => {
         if (!defaultedInline.value.enabled) {
-            const el = getScrollableParent(pickerWrapperRef.value);
-            el?.removeEventListener('scroll', onScroll);
             window?.removeEventListener('resize', onResize);
         }
         window?.removeEventListener('keyup', onKeyUp);
@@ -201,7 +197,7 @@
         { deep: true },
     );
 
-    const { openOnTop, menuStyle, xCorrect, setMenuPosition, getScrollableParent, shadowRender } = usePosition({
+    const { openOnTop, menuStyle, xCorrect, setMenuPosition, shadowRender } = usePosition({
         menuRef: dpWrapMenuRef,
         menuRefInner: dpMenuRef,
         inputRef,
@@ -249,20 +245,6 @@
             (props.timePicker || props.monthPicker || props.yearPicker || props.quarterPicker)
         );
     });
-
-    /**
-     * Event listener for 'scroll'
-     * Depending on the props, it can close the menu or set correct position
-     */
-    const onScroll = (): void => {
-        if (isOpen.value) {
-            if (defaultedConfig.value.closeOnScroll) {
-                closeMenu();
-            } else {
-                setMenuPosition();
-            }
-        }
-    };
 
     /**
      * Event listener for 'resize'
@@ -357,38 +339,9 @@
         }
     };
 
-    const emitOnAutoApply = (ignoreClose: boolean): void => {
-        updateTextInputWithDateTimeValue();
-        emitModelValue();
-        if (defaultedConfig.value.closeOnAutoApply && !ignoreClose) {
-            closeMenu();
-        }
-    };
-
     const updateTextInputWithDateTimeValue = () => {
         if (inputRef.value && defaultedTextInput.value.enabled) {
             inputRef.value.setParsedDate(internalModelValue.value);
-        }
-    };
-
-    /**
-     * When value is selected it will emit an event that will call this function
-     * ignoreClose is passed when time is picked or month and year, since they update the value and for
-     * the user experience it should not close the menu
-     */
-    const autoApplyValue = (ignoreClose = false): void => {
-        if (props.autoApply) {
-            const isTimeValid = isValidTime(internalModelValue.value);
-
-            if (isTimeValid && validateBeforeEmit()) {
-                if (defaultedRange.value.enabled && Array.isArray(internalModelValue.value)) {
-                    if (defaultedRange.value.partialRange || internalModelValue.value.length === 2) {
-                        emitOnAutoApply(ignoreClose);
-                    }
-                } else {
-                    emitOnAutoApply(ignoreClose);
-                }
-            }
         }
     };
 
@@ -506,7 +459,6 @@
         selectDate,
         clearValue,
         openMenu,
-        onScroll,
         formatInputValue, // exposed for testing purposes
         updateInternalModelValue, // modify internal modelValue
         setMonthYear,

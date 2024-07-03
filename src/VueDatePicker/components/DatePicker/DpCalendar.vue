@@ -183,7 +183,6 @@
     const calendarWrapRef = ref<HTMLElement | null>(null);
     const showCalendar = ref(true);
     const transitionName = ref('');
-    const touch = ref({ startX: 0, endX: 0, startY: 0, endY: 0 });
     const activeTooltip = ref<HTMLElement[]>([]);
     const tpArrowStyle = ref<{ left?: string; right?: string }>({ left: '50%' });
 
@@ -201,13 +200,6 @@
 
     onMounted(() => {
         emit('mount', { cmp: 'calendar', refs: dayRefs });
-        if (!defaultedConfig.value.noSwipe) {
-            if (calendarWrapRef.value) {
-                calendarWrapRef.value.addEventListener('touchstart', onTouchStart, { passive: false });
-                calendarWrapRef.value.addEventListener('touchend', onTouchEnd, { passive: false });
-                calendarWrapRef.value.addEventListener('touchmove', onTouchMove, { passive: false });
-            }
-        }
         if (props.monthChangeOnScroll && calendarWrapRef.value) {
             calendarWrapRef.value.addEventListener('wheel', onScroll, { passive: false });
         }
@@ -301,30 +293,6 @@
             showMakerTooltip.value = null;
             markerTooltipStyle.value = JSON.parse(JSON.stringify({ bottom: '', left: '', transform: '' }));
             emit('tooltip-close', day.marker);
-        }
-    };
-
-    const onTouchStart = (ev: TouchEvent): void => {
-        touch.value.startX = ev.changedTouches[0].screenX;
-        touch.value.startY = ev.changedTouches[0].screenY;
-    };
-
-    const onTouchEnd = (ev: TouchEvent): void => {
-        touch.value.endX = ev.changedTouches[0].screenX;
-        touch.value.endY = ev.changedTouches[0].screenY;
-        handleTouch();
-    };
-
-    const onTouchMove = (ev: TouchEvent): void => {
-        if (props.vertical && !props.inline) {
-            ev.preventDefault();
-        }
-    };
-
-    const handleTouch = () => {
-        const property = props.vertical ? 'Y' : 'X';
-        if (Math.abs(touch.value[`start${property}`] - touch.value[`end${property}`]) > 10) {
-            emit('handle-swipe', touch.value[`start${property}`] > touch.value[`end${property}`] ? 'right' : 'left');
         }
     };
 

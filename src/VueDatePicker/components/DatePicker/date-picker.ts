@@ -3,10 +3,7 @@ import {
     add,
     addDays,
     addMonths,
-    getHours,
-    getMinutes,
     getMonth,
-    getSeconds,
     getYear,
     set,
     startOfWeek,
@@ -25,7 +22,6 @@ import {
 import { useDefaults, useModel, useValidation } from '@/composables';
 import { getMapDate, isNumNullish } from '@/utils/util';
 import { isNumberArray } from '@/utils/type-guard';
-import { useTimePickerUtils } from '@/components/TimePicker/time-picker-utils';
 import {
     checkRangeAutoApply,
     getRangeWithFixedDate,
@@ -34,7 +30,7 @@ import {
 } from '@/composables/shared';
 import { FlowStep } from '@/constants';
 
-import type { ICalendarDate, ICalendarDay, WeekStartNum, IMarker, VueEmit, TimeType } from '@/interfaces';
+import type { ICalendarDate, ICalendarDay, WeekStartNum, IMarker, VueEmit } from '@/interfaces';
 import type { UnwrapRef } from 'vue';
 import type { PickerBasePropsType } from '@/props';
 
@@ -48,10 +44,8 @@ export const useDatePicker = (
     const lastScrollTime = ref(new Date());
 
     const { modelValue, calendars, time } = useModel(props, emit);
-    const { defaultedMultiCalendars, defaultedStartTime, defaultedRange, defaultedTz, propDates } = useDefaults(props);
+    const { defaultedMultiCalendars, defaultedRange, defaultedTz, propDates } = useDefaults(props);
     const { validateMonthYearInRange, isDisabled, isDateRangeAllowed, checkMinMaxRange } = useValidation(props);
-    const { updateTimeValues, getSetDateTime, setTime, assignStartTime, validateTime, disabledTimesConfig } =
-        useTimePickerUtils(props, time, modelValue, updateFlow);
     // Get month based on the calendar instance
     const month = computed(
         () =>
@@ -95,9 +89,6 @@ export const useDatePicker = (
         if (!props.shadow) {
             if (!modelValue.value) {
                 setStartDate();
-                if (defaultedStartTime.value) {
-                    assignStartTime(defaultedStartTime.value);
-                }
             }
             mapInternalModuleValues(true);
             if (props.focusStartDate && props.startDate) {
@@ -158,9 +149,6 @@ export const useDatePicker = (
     // Assign singe value
     const assignSingleValue = (date: Date, fromMount: boolean): void => {
         assignMonthAndYear(date);
-        setTime('hours', getHours(date));
-        setTime('minutes', getMinutes(date));
-        setTime('seconds', getSeconds(date));
         if (defaultedMultiCalendars.value.count && fromMount) {
             handleNextMonthYear();
         }
@@ -188,13 +176,6 @@ export const useDatePicker = (
         } else {
             assignMonthAndYear(dates[0], fromMount);
         }
-        const getValue = (mapper: (date: Date) => number, keys: TimeType): number[] => [
-            mapper(dates[0]),
-            dates[1] ? mapper(dates[1]) : (time[keys] as number[])[1],
-        ];
-        setTime('hours', getValue(getHours, 'hours'));
-        setTime('minutes', getValue(getMinutes, 'minutes'));
-        setTime('seconds', getValue(getSeconds, 'seconds'));
     };
 
     // Assign range values, or in case of multiDates, set
@@ -606,34 +587,6 @@ export const useDatePicker = (
         selectOnAutoApply();
     };
 
-    const handleTimeUpdate = () => {
-        if (Array.isArray(modelValue.value)) {
-            if (props.multiDates) {
-                const lastEntry = multiDatesLast();
-                modelValue.value[modelValue.value.length - 1] = getSetDateTime(lastEntry as Date);
-            } else {
-                modelValue.value = modelValue.value.map((date, i) => {
-                    if (date) return getSetDateTime(date, i);
-                    return date;
-                });
-            }
-        } else {
-            modelValue.value = getSetDateTime(modelValue.value);
-        }
-        emit('time-update');
-    };
-
-    // Get last date in the multi dates arr
-    const multiDatesLast = (): Date | null => {
-        if (Array.isArray(modelValue.value) && modelValue.value.length) {
-            return modelValue.value[modelValue.value.length - 1];
-        }
-        return null;
-    };
-
-    const updateTime = (value: number | number[], isHours = true, isSeconds = false) => {
-        updateTimeValues(value, isHours, isSeconds, handleTimeUpdate);
-    };
 
     return {
         calendars,
@@ -641,8 +594,6 @@ export const useDatePicker = (
         month,
         year,
         time,
-        disabledTimesConfig,
-        validateTime,
         getCalendarDays,
         getMarker,
         handleScroll,
@@ -652,6 +603,5 @@ export const useDatePicker = (
         updateMonthYear,
         presetDate,
         selectCurrentDate,
-        updateTime,
     };
 };

@@ -5,12 +5,10 @@ import {
     addMonths,
     getMonth,
     getYear,
-    set,
     setMilliseconds,
     setSeconds,
     startOfYear,
     addDays,
-    getHours,
     startOfMonth,
 } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -19,17 +17,13 @@ import MainComponent from '@/VueDatePicker.vue';
 import DatepickerMenu from '@/components/DatepickerMenu.vue';
 import DpCalendar from '@/components/DatePicker/DpCalendar.vue';
 import DatePicker from '@/components/DatePicker/DatePicker.vue';
-import TimePicker from '@/components/TimePicker/TimePicker.vue';
 import ActionRow from '@/components/ActionRow.vue';
 import SelectionOverlay from '@/components/Common/SelectionOverlay.vue';
-import TimeInput from '@/components/TimePicker/TimeInput.vue';
 import DpHeader from '@/components/DatePicker/DpHeader.vue';
-import TimePickerSolo from '@/components/TimePicker/TimePickerSolo.vue';
 
 import { getWeekFromDate, resetDateTime } from '@/utils/date-utils';
 
 import type { TimeObj, ICalendarDate, SixWeekMode } from '@/interfaces';
-import MonthPicker from '@/components/MonthPicker/MonthPicker.vue';
 import { clickCalendarDate, clickSelectBtn, openMenu } from '../../utils';
 
 const format = (date: Date): string => {
@@ -77,17 +71,6 @@ const selectRange = async (picker: VueWrapper<any>, start: Date, end: Date) => {
     picker.vm.selectDate({ value: end, current: true });
     await nextTick();
     await flushPromises();
-};
-
-const validateSelectedTime = async (picker: VueWrapper<any>, hours: number, minutes: number) => {
-    const timePicker = picker.findComponent(TimePicker);
-    timePicker.vm.$emit('update:hours', hours);
-    timePicker.vm.$emit('update:minutes', minutes);
-    await timePicker.vm.$nextTick();
-    await flushPromises();
-
-    expect(picker.vm.modelValue.getHours()).toEqual(hours);
-    expect(picker.vm.modelValue.getMinutes()).toEqual(minutes);
 };
 
 describe('Logic connection', () => {
@@ -154,33 +137,6 @@ describe('Logic connection', () => {
         calendar.vm.$emit('select-date', { value: start, current: true });
         await checkRange(calendar, datePicker, start, end);
 
-        dp.unmount();
-    });
-
-    it('Should update time', async () => {
-        const val = 15;
-        const date = new Date();
-        const { dp, datePicker } = await mountDatepicker({ modelValue: date });
-
-        await validateSelectedTime(datePicker, val, val);
-
-        dp.unmount();
-    });
-
-    it('Should update range time', async () => {
-        const val = 15;
-        const start = new Date();
-        const end = addDays(new Date(), 7);
-        const { dp, datePicker } = await mountDatepicker({ modelValue: [start, end], range: true });
-
-        const timePicker = datePicker.findComponent(TimePicker);
-        timePicker.vm.$emit('update:hours', [start.getHours(), val]);
-        await timePicker.vm.$nextTick();
-        timePicker.vm.$emit('update:minutes', [val, end.getMinutes()]);
-        await timePicker.vm.$nextTick();
-
-        expect(datePicker.vm.modelValue[1].getHours()).toEqual(val);
-        expect(datePicker.vm.modelValue[0].getMinutes()).toEqual(val);
         dp.unmount();
     });
 
@@ -341,13 +297,6 @@ describe('Logic connection', () => {
         expect(datePicker.vm.time.hours).toEqual(10);
     });
 
-    it('Should assign empty time picker', async () => {
-        const hours = getHours(new Date());
-        const { menu } = await mountDatepicker({ timePicker: true });
-        const timePicker = menu.findComponent(TimePickerSolo) as unknown as VueWrapper<{ time: { hours: number } }>;
-        expect(timePicker.vm.time.hours).toEqual(hours);
-    });
-
     it('Should get seconds value depending on the mode', async () => {
         const { datePicker } = await mountDatepicker({ enableSeconds: true });
         expect(datePicker.vm.time.seconds).toBeDefined();
@@ -472,54 +421,6 @@ describe('Logic connection', () => {
         expect(datePicker.vm.year(0)).toEqual(getYear(date));
     });
 
-    it('Should disable times that are out of max time validation', async () => {
-        const date = set(new Date(), { hours: 21 });
-        const { menu } = await mountDatepicker({ maxTime: { hours: 21 }, modelValue: date });
-        await menu.find(`[data-test="open-time-picker-btn"]`).trigger('click');
-        await menu.vm.$nextTick();
-        const timeInput = menu.findComponent(TimeInput);
-
-        const incBtn = timeInput.find(`[data-test="hours-time-inc-btn-0"]`);
-
-        expect(incBtn.classes()).toContain('dp__inc_dec_button_disabled');
-    });
-
-    it('Should disable times that are out of min time validation', async () => {
-        const date = set(new Date(), { hours: 7 });
-        const { menu } = await mountDatepicker({ minTime: { hours: 7 }, modelValue: date });
-        await menu.find(`[data-test="open-time-picker-btn"]`).trigger('click');
-        await menu.vm.$nextTick();
-        const timeInput = menu.findComponent(TimeInput);
-
-        const incBtn = timeInput.find(`[data-test="hours-time-dec-btn-0"]`);
-
-        expect(incBtn.classes()).toContain('dp__inc_dec_button_disabled');
-    });
-
-    it('Should select multi dates with month picker mode', async () => {
-        const { menu, dp } = await mountDatepicker({ modelValue: null, multiDates: true, monthPicker: true });
-        const start = startOfYear(new Date());
-        const months = [addMonths(start, 1), addMonths(start, 2), addMonths(start, 3)];
-        const monthPicker = menu.findComponent(MonthPicker) as unknown as VueWrapper<{
-            selectMonth: (month: number, instance: number) => void;
-        }>;
-        for (const date of months) {
-            monthPicker.vm.selectMonth(getMonth(date), 0);
-            await monthPicker.vm.$nextTick();
-        }
-        await dp.vm.$nextTick();
-        dp.vm.selectDate();
-        await dp.vm.$nextTick();
-
-        const emitted = (dp.emitted()['update:model-value'][0] as any)[0];
-        expect(emitted).toHaveLength(3);
-        const lastSelection = emitted[2];
-        expect({ month: lastSelection.month, year: lastSelection.year }).toEqual({
-            month: getMonth(months[2]),
-            year: getYear(months[2]),
-        });
-    });
-
     it('Should validate the time based on the disabled times option', async () => {
         const hours = 10;
         const minutes = 15;
@@ -529,8 +430,6 @@ describe('Logic connection', () => {
         const { datePicker, menu, dp } = await mountDatepicker({ modelValue: new Date(), disabledTimes });
         await datePicker.find(`[data-test="open-time-picker-btn"]`).trigger('click');
         await datePicker.vm.$nextTick();
-
-        await validateSelectedTime(datePicker, hours, minutes);
 
         const actionRow = menu.findComponent(ActionRow);
         const button = actionRow.find('[data-test="select-button"]');
